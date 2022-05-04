@@ -1,6 +1,6 @@
 :- module(proylcc, 
 	[  
-		flick/3
+		flick/5
 	]).
 
 :- dynamic visitado/1.
@@ -47,7 +47,7 @@ clear_outs([X|Xs],L) :- (not(pertenece(out,X)),clear_outs(Xs,Lm), L= [X|Lm]) ;
 % Evalua si dado dos pares de coordenadas, son adyacenteC, es decir, son del mismo color y existe un camino hacia el otro atraves de adyacentesC.
 % Por definicion, el mismo elemento es adyacenteC de si mismo.
 %
-adyacentesC(Grid,X,X).
+adyacentesC(_,X,X).
 adyacentesC(Grid,X,Y) :- esAdyacente(X,Y),mismoColor(Grid,X,Y), assert(visitado(X)).
 adyacentesC(Grid,X,Y) :- esAdyacente(X,Z), not(visitado(Z)), mismoColor(Grid,X,Z),adyacentesC(Grid,Z,Y) , assert(visitado(Z)).
 
@@ -184,10 +184,12 @@ replaceInList([_|Ms],Y,Y,E,L):- L = [E|Ms].
 % FGrid es el resultado de hacer 'flick' de la grilla Grid con el color Color.
 % Retorna false si Color coincide con el color de la celda Origen de la grilla. 
 
-flick(Grid, Color, FGrid):-
-	getColor(Grid,[0,0],C),
+flick(Grid, Origen, Color, FGrid,Capturados):-
+	getColor(Grid,Origen,C),
 	C \= Color,
-	generateAdyacentesC(Grid,[0,0],LAdyacentesC),
-	flickColor(Grid,LAdyacentesC,Color,FGrid).
+	generateAdyacentesC(Grid,Origen,LAdyacentesC),
+	flickColor(Grid,LAdyacentesC,Color,FGrid),
+    generateAdyacentesC(FGrid,Origen,NewAdyacents),
+    length(NewAdyacents,Capturados).
 
                                                                                    

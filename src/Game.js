@@ -30,6 +30,8 @@ class Game extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      origen: "[0,0]",
+      capturados : 0,
       turns: 0,
       grid: null,
       complete: false,  // true if game is complete, false otherwise
@@ -38,6 +40,14 @@ class Game extends React.Component {
     this.handleClick = this.handleClick.bind(this);
     this.handlePengineCreate = this.handlePengineCreate.bind(this);
     this.pengine = new PengineClient(this.handlePengineCreate);
+
+    // Consulta si se quiere ingresar otra celda de origen en vez de la [0,0]
+    let consulta = prompt("Introduzca las coordenadas de la celda de origen");
+    let celdaOrigen;
+    if (consulta !== null && consulta !== "") {
+      celdaOrigen = "["+consulta+"]";
+      this.state.origen = celdaOrigen;
+    }
   }
 
   handlePengineCreate() {
@@ -73,7 +83,7 @@ class Game extends React.Component {
     //        [r,b,b,v,p,y,p,r,b,g,p,y,b,r],
     //        [v,g,p,b,v,v,g,g,g,b,v,g,g,g]],r, Grid)
     const gridS = JSON.stringify(this.state.grid).replaceAll('"', "");
-    const queryS = "flick(" + gridS + "," + color + ", Grid)";
+    const queryS = "flick(" + gridS + ","+this.state.origen+"," + color + ", Grid, Capturados)";
     this.setState({
       waiting: true
     });
@@ -81,6 +91,7 @@ class Game extends React.Component {
       if (success) {
         this.setState({
           grid: response['Grid'],
+          capturados: response['Capturados'],
           turns: this.state.turns + 1,
           waiting: false
         });
@@ -112,6 +123,10 @@ class Game extends React.Component {
           <div className="turnsPanel">
             <div className="turnsLab">Turns</div>
             <div className="turnsNum">{this.state.turns}</div>
+          </div>
+          <div className="capturedPanel">
+            <div className="capturedLab">Capturados</div>
+            <div className="capturedNum">{this.state.capturados}</div>
           </div>
         </div>
         <Board grid={this.state.grid} />
