@@ -44,21 +44,23 @@ clear_outs([X|Xs],L) :- (not(pertenece(out,X)),clear_outs(Xs,Lm), L= [X|Lm]) ;
 %
 % adyacentesC(+Grid,+X,+Y)
 %
-% Evalua si dado dos pares de coordenadas, son adyacenteC, es decir, son del mismo color y existe un camino hacia el otro atraves de adyacentesC.
-% Por definicion, el mismo elemento es adyacenteC de si mismo.
-%
-adyacentesC(_,X,X).
-adyacentesC(Grid,X,Y) :- esAdyacente(X,Y),mismoColor(Grid,X,Y), assert(visitado(X)).
-adyacentesC(Grid,X,Y) :- esAdyacente(X,Z), not(visitado(Z)), mismoColor(Grid,X,Z),adyacentesC(Grid,Z,Y) , assert(visitado(Z)).
-
-%
-% generateAdyacentesC(+Grid,+X,-Lista)
-%
-% Lista es una lista con pares ordenados contenidos en listas de dos pares los cuales hacen referencia a las coordenadas de las celdas que
-% son adyacentesC a la posicion X pasada por parametro en la grilla Grid.
+% Evalua si dado dos pares de coordenadas, son adyacenteC, es decir, son del mismo color y son adyacentes.
 %
 
-generateAdyacentesC(Grid,X,Lista) :- retractall(visitado(_)), findall(Y, (adyacentesC(Grid,X,Y)), L), limpiarRepetidos(L,Lista).
+adyacentesC(Grid,X,Y) :- esAdyacente(X,Y),mismoColor(Grid,X,Y).
+
+%
+% adyacentesCTransitiva(+Grid,+ListaPos,-L)
+%
+% L es la clausla transitiva de adyacentesC de las posiciones pasadas por parametros, vemos que es una list
+% de posiciones para permitir en el mismo predicado multiples calculos de adyacentesC.
+%
+
+adyacentesCTransitiva(Grid,[X|Xs],L) :- (   not(visitado(X)), assert(visitado(X)),findall(Y, (adyacentesC(Grid,X,Y), not(visitado(Y))),T),
+    (   (   Xs \=[] , T \= [], adyacentesCTransitiva(Grid,Xs,La), adyacentesCTransitiva(Grid,T,Ls), append(La,Ls,Lp), L = [X|Lp]);
+    (   Xs = [], T \= [], adyacentesCTransitiva(Grid,T,Ls), L = [X|Ls]); 
+    (    Xs = [], T = [], L = [X] );
+    (   Xs \= [], T = [], adyacentesCTransitiva(Grid,Xs,La), L = [X|La]))); (   visitado(X), L = []).
 
 %
 % esConjunto(+X)
@@ -183,13 +185,17 @@ replaceInList([_|Ms],Y,Y,E,L):- L = [E|Ms].
 %
 % FGrid es el resultado de hacer 'flick' de la grilla Grid con el color Color.
 % Retorna false si Color coincide con el color de la celda Origen de la grilla. 
+% TODO : se guardan los assert por eso hay retract, deberia haber un predicado que
+% aisle eso y ademas el convertir en una lista a origen, [Origen].
 
 flick(Grid, Origen, Color, FGrid,Capturados):-
 	getColor(Grid,Origen,C),
 	C \= Color,
-	generateAdyacentesC(Grid,Origen,LAdyacentesC),
+    retractall(visitado(_)),
+	adyacentesCTransitiva(Grid,[Origen],LAdyacentesC),
 	flickColor(Grid,LAdyacentesC,Color,FGrid),
-    generateAdyacentesC(FGrid,Origen,NewAdyacents),
+    retractall(visitado(_)),
+    adyacentesCTransitiva(FGrid,[Origen],NewAdyacents),
     length(NewAdyacents,Capturados).
 
                                                                                    
