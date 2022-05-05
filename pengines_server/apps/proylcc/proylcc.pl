@@ -50,10 +50,18 @@ clear_outs([X|Xs],L) :- (not(pertenece(out,X)),clear_outs(Xs,Lm), L= [X|Lm]) ;
 adyacentesC(Grid,X,Y) :- esAdyacente(X,Y),mismoColor(Grid,X,Y).
 
 %
+% generateAdyacentesCTransitiva(+Grid,+X,-L)
+%
+% L es la lista con los adyacentesC de la celda X pasada por parametro en la grilla Grid
+%
+
+generateAdyacentesCTransitiva(Grid,X,L) :- retractall(visitado(_)), adyacentesCTransitiva(Grid,[X],L).
+
+%
 % adyacentesCTransitiva(+Grid,+ListaPos,-L)
 %
-% L es la clausla transitiva de adyacentesC de las posiciones pasadas por parametros, vemos que es una list
-% de posiciones para permitir en el mismo predicado multiples calculos de adyacentesC.
+% L es la clasula transitiva de adyacentesC de las posicion pasda por parametro, acepta multiples posiciones ya que cuando
+% halla un adjacenteC sin ver intenta expandirse, llamandose recursivamente.
 %
 
 adyacentesCTransitiva(Grid,[X|Xs],L) :- (   not(visitado(X)), assert(visitado(X)),findall(Y, (adyacentesC(Grid,X,Y), not(visitado(Y))),T),
@@ -61,35 +69,6 @@ adyacentesCTransitiva(Grid,[X|Xs],L) :- (   not(visitado(X)), assert(visitado(X)
     (   Xs = [], T \= [], adyacentesCTransitiva(Grid,T,Ls), L = [X|Ls]); 
     (    Xs = [], T = [], L = [X] );
     (   Xs \= [], T = [], adyacentesCTransitiva(Grid,Xs,La), L = [X|La]))); (   visitado(X), L = []).
-
-%
-% esConjunto(+X)
-%
-% Evalua si una lista es conjunto o no, es decir, no tiene elementos repetidos.
-% Retorna False si no se trata de un conjunto.
-
-esConjunto([]).
-esConjunto([X|Xs]) :- not(pertenece(X,Xs)), esConjunto(Xs).
-
-%
-% agregarAConjunto(+X,+Y,-L) 
-%
-% L es el resultado de intentar agregar X al conjunto Y, si el L no es un cojunto entonces no intenta agregarlo, si lo es pero ya esta en 
-% el conjunto entonces no lo agrega, si no lo encuentra lo agrega.
-%
-
-agregarAConjunto(X,[],[X]).
-agregarAConjunto(X,[X|Ys],[X|Ys]).
-agregarAConjunto(X,[Y|Ys],[Y|L]) :- esConjunto([Y|Ys]),agregarAConjunto(X,Ys,L).
-
-%
-%  limpiarRepetidos(+X,-Z)
-%
-% Z es la lista X pero sin elementos repetidos, es decir, lo convierte en un conjunto.
-%
-
-limpiarRepetidos([],[]).
-limpiarRepetidos([X|Xs],Zs) :- (not(pertenece(X,Xs)), limpiarRepetidos(Xs,Z),agregarAConjunto(X,Z,Zs)); limpiarRepetidos(Xs,Zs).
 
 %
 % esAdyacente(X,Y)
@@ -191,11 +170,9 @@ replaceInList([_|Ms],Y,Y,E,L):- L = [E|Ms].
 flick(Grid, Origen, Color, FGrid,Capturados):-
 	getColor(Grid,Origen,C),
 	C \= Color,
-    retractall(visitado(_)),
-	adyacentesCTransitiva(Grid,[Origen],LAdyacentesC),
+	generateAdyacentesCTransitiva(Grid,Origen,LAdyacentesC),
 	flickColor(Grid,LAdyacentesC,Color,FGrid),
-    retractall(visitado(_)),
-    adyacentesCTransitiva(FGrid,[Origen],NewAdyacents),
+    generateAdyacentesCTransitiva(FGrid,Origen,NewAdyacents),
     length(NewAdyacents,Capturados).
 
                                                                                    

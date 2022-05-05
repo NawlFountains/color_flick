@@ -32,6 +32,7 @@ class Game extends React.Component {
     this.state = {
       origen: "[0,0]",
       capturados : 0,
+      history : [],
       turns: 0,
       grid: null,
       complete: false,  // true if game is complete, false otherwise
@@ -92,9 +93,15 @@ class Game extends React.Component {
         this.setState({
           grid: response['Grid'],
           capturados: response['Capturados'],
+          history: [color, ...this.state.history],
           turns: this.state.turns + 1,
           waiting: false
         });
+        console.log(JSON.stringify(this.state.history));
+        if (this.state.capturados === 196){
+          this.setState ({complete: true});
+          alert("Usted ha ganado");
+        }
       } else {
         // Prolog query will fail when the clicked color coincides with that in the top left cell.
         this.setState({
@@ -127,6 +134,15 @@ class Game extends React.Component {
           <div className="capturedPanel">
             <div className="capturedLab">Capturados</div>
             <div className="capturedNum">{this.state.capturados}</div>
+          </div>
+          <div className="historyPanel">
+            <div className="historyLab">Historial</div>
+            <div className="historyScroll">
+              {this.state.history.map(color =>
+              <div
+                className="colorCell"
+                style={{ backgroundColor: colorToCss(color) }}
+              />)}</div>
           </div>
         </div>
         <Board grid={this.state.grid} />
