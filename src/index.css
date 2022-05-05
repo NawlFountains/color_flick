@@ -43,10 +43,18 @@ body {
   cursor: pointer;
 }
 
-.colorBtn:hover {
+.origenBtn {
+  height: 40px;
+  width: 40px;
+  border: none;
+  cursor: pointer;
+  background:transparent;
+}
+.colorBtn:hover, .origenBtn:hover {
   outline: none;
   border: 2px solid black;
 }
+
 
 .turnsPanel, .capturedPanel , .historyPanel{
   display: flex;
@@ -65,9 +73,29 @@ body {
   margin-top: 10px;
 }
 
-.board {
+.container {
   margin: 20px;
   display: grid;
   grid-template-columns: repeat(14, 40px);
   grid-template-rows: repeat(14, 40px);
+}
+
+.board{
+  display: grid;
+  grid-template-columns: repeat(14, 40px);
+  grid-template-rows: repeat(14, 40px);
+  grid-area: 1/1/1/1;
+}
+
+.buttonMatrix {
+  display: grid;
+  background:transparent;
+  grid-template-columns: repeat(14, 40px);
+  grid-template-rows: repeat(14, 40px);
+  grid-area: 1/1/1/1;
+}
+
+.rightPanel {
+  padding-left: 20px;
+  font-size: 24px;
 }

@@ -35,20 +35,13 @@ class Game extends React.Component {
       history : [],
       turns: 0,
       grid: null,
+      started: false,
       complete: false,  // true if game is complete, false otherwise
       waiting: false
     };
     this.handleClick = this.handleClick.bind(this);
     this.handlePengineCreate = this.handlePengineCreate.bind(this);
     this.pengine = new PengineClient(this.handlePengineCreate);
-
-    // Consulta si se quiere ingresar otra celda de origen en vez de la [0,0]
-    let consulta = prompt("Introduzca las coordenadas de la celda de origen");
-    let celdaOrigen;
-    if (consulta !== null && consulta !== "") {
-      celdaOrigen = "["+consulta+"]";
-      this.state.origen = celdaOrigen;
-    }
   }
 
   handlePengineCreate() {
@@ -60,6 +53,16 @@ class Game extends React.Component {
         });
       }
     });
+  }
+
+  assignOrigen(coords) {
+    if (this.state.complete || this.state.waiting){
+      return;
+    }
+    if (!this.state.started){
+      this.setState({origen: coords});
+      alert("Asigno como celda origen "+coords);
+    }
   }
 
   handleClick(color) {
@@ -97,7 +100,9 @@ class Game extends React.Component {
           turns: this.state.turns + 1,
           waiting: false
         });
-        console.log(JSON.stringify(this.state.history));
+        if (this.state.started === false){
+          this.setState({started : true});
+        }
         if (this.state.capturados === 196){
           this.setState ({complete: true});
           alert("Usted ha ganado");
@@ -145,7 +150,29 @@ class Game extends React.Component {
               />)}</div>
           </div>
         </div>
-        <Board grid={this.state.grid} />
+        <div className="container">
+          <Board grid={this.state.grid} />
+          <div className = "buttonMatrix">
+                  {this.state.grid.map((row, i) =>
+                      row.map((cell, j) =>
+                      <button className="origenBtn"
+                      value={cell}
+                      onClick={() => this.assignOrigen("["+i+","+j+"]")}
+                      key={i + "." + j}
+                      ></button>
+                      )
+                      )}
+          </div>
+        </div>
+        <div className="rightPanel">
+          <h1>Color flick</h1>
+          <div className="instructionsText">
+              <p>Para jugar primero debe seleccionar la celda donde desea originar, una vez seleccione una celda esta no puede ser cambiada, de seleccionar una
+              el juego le asigna la celda en la parte super izquierda de la grilla.</p>
+              <p>El juego consta de ir seleccionado colores, estos colores cambian las celdas que son adjacentes y del mismo color a la celda origen, el juego se acaba
+              cuando el jugador logra hacer que toda la grilla tenga el mismo color. A jugar.</p>
+              </div>
+        </div>
       </div>
     );
   }
