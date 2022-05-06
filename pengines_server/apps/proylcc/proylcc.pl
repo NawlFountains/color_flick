@@ -178,4 +178,11 @@ flick(Grid, Origen, Color, FGrid,Capturados):-
     generateAdyacentesCTransitiva(FGrid,Origen,NewAdyacents,LimiteX,LimiteY),
     length(NewAdyacents,Capturados).
 
-                                                                                   
+%
+% gridComplete(+Grid,+Capturados)
+%
+% Consulta si se gano el juego, hace esto comparando las dimensiones de la grilla con la cantidad de celdas capturadas
+% pasadas por parametro.
+%
+
+gridComplete(Grid,Capturados) :- Grid = [X|_], length(Grid,LimiteX), length(X, LimiteY), Capturados is LimiteX * LimiteY.                                                                            

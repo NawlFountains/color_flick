@@ -61,7 +61,7 @@ class Game extends React.Component {
     }
     if (!this.state.started){
       this.setState({origen: coords});
-      alert("Asigno como celda origen "+coords);
+      alert("Celda de origen asignada");
     }
   }
 
@@ -100,12 +100,22 @@ class Game extends React.Component {
           turns: this.state.turns + 1,
           waiting: false
         });
+
+        //Crea la consulta para ver si el juego se acabo
+        const gridTest = JSON.stringify(this.state.grid).replaceAll('"', "");
+        const queryTest = "gridComplete(" + gridTest + ","+this.state.capturados+")";
+        this.pengine.query(queryTest, (success) => {
+          if (success) {
+            this.setState({
+              complete : true
+            })
+            alert("Felicidades a ganado el juego");
+          }
+        })
+
+        //Pregunta si ya comenzo el juego, sino lo hizo lo comienza
         if (this.state.started === false){
           this.setState({started : true});
-        }
-        if (this.state.capturados === 196){
-          this.setState ({complete: true});
-          alert("Usted ha ganado");
         }
       } else {
         // Prolog query will fail when the clicked color coincides with that in the top left cell.
