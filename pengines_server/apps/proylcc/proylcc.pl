@@ -6,7 +6,7 @@
 :- dynamic visitado/1.
 
 %
-% adyacentes([+X,+Y], -L)
+% adyacentes([+X,+Y],+LimiteX,+LimiteY -L)
 %
 % L es un la lista con las posiciones adyacentes a la posicion pasada dentro de los limites de la grilla
 % que en nuestro caso es de LmiteX x LimiteY.
@@ -21,7 +21,7 @@ adyacentes([X,Y],LimiteX,LimiteY,L):- X >= 0 , X < LimiteX , Y >= 0 , Y < Limite
 
 
 %
-% getCoords(+X,+Y,-E)
+% getCoords(+X,+Y,+LimiteX,+LimiteY-E)
 %
 % E es un par ordenado de coordenadas que evalua si la coordenada pasada por parametro pertenece o no a la grilla y retornar
 % el par correspondiente, si esta dentro retorna el mismo valor ingresado pero en un par, si alguna componente
