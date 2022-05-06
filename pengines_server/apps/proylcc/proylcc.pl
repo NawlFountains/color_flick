@@ -9,13 +9,13 @@
 % adyacentes([+X,+Y], -L)
 %
 % L es un la lista con las posiciones adyacentes a la posicion pasada dentro de los limites de la grilla
-% que en nuestro caso es de 14x14.
+% que en nuestro caso es de LmiteX x LimiteY.
 
-adyacentes([X,Y],L):- X >= 0 , X < 14 , Y >= 0 , Y < 14 ,
-    X1 is X-1,getCoord(X1,Y,E1),
-    X2 is X+1, getCoord(X2,Y,E2),
-    Y1 is Y-1 ,getCoord(X,Y1,E3),
-    Y2 is Y+1 ,getCoord(X,Y2,E4),
+adyacentes([X,Y],LimiteX,LimiteY,L):- X >= 0 , X < LimiteX , Y >= 0 , Y < LimiteY ,
+    X1 is X-1,getCoord(X1,Y,LimiteX,LimiteY,E1),
+    X2 is X+1, getCoord(X2,Y,LimiteX,LimiteY,E2),
+    Y1 is Y-1 ,getCoord(X,Y1,LimiteX,LimiteY,E3),
+    Y2 is Y+1 ,getCoord(X,Y2,LimiteX,LimiteY,E4),
     combineCoords(E1,E2,E3,E4,Lm),
     clear_outs(Lm,L).
 
@@ -25,12 +25,12 @@ adyacentes([X,Y],L):- X >= 0 , X < 14 , Y >= 0 , Y < 14 ,
 %
 % E es un par ordenado de coordenadas que evalua si la coordenada pasada por parametro pertenece o no a la grilla y retornar
 % el par correspondiente, si esta dentro retorna el mismo valor ingresado pero en un par, si alguna componente
-% escapa de lo limites, se le asigna "out".
+% escapa de lo LimiteX o LimiteY, se le asigna "out".
 
-getCoord(X,Y,E) :- ( Em = [out] , agregarALista(out,Em,E), ((X < 0) ; (X > 13)), ((Y <0);(Y > 13)));
-                    (Em = [out], agregarALista(Y,Em,E), (((X < 0) ; (X > 13)), ((Y >= 0),(Y =< 13))));
-                    ( Em = [X] , agregarALista(out,Em,E) ,(((X >= 0) , (X =< 13)), ((Y < 0);(Y > 13))));
-                    (  Em = [X] , agregarALista(Y,Em,E), (((X >= 0) , (X =< 13)), ((Y >= 0),(Y =< 13)))).
+getCoord(X,Y,LimiteX,LimiteY,E) :- ( Em = [out] , agregarALista(out,Em,E), ((X < 0) ; (X > LimiteX)), ((Y <0);(Y >= LimiteY)));
+                    (Em = [out], agregarALista(Y,Em,E), (((X < 0) ; (X >= LimiteX)), ((Y >= 0),(Y < LimiteY))));
+                    ( Em = [X] , agregarALista(out,Em,E) ,(((X >= 0) , (X < LimiteX)), ((Y < 0);(Y >= LimiteY))));
+                    (  Em = [X] , agregarALista(Y,Em,E), (((X >= 0) , (X < LimiteX)), ((Y >= 0),(Y < LimiteY)))).
 
 %
 % clear_outs(+X,-L)
@@ -47,36 +47,36 @@ clear_outs([X|Xs],L) :- (not(pertenece(out,X)),clear_outs(Xs,Lm), L= [X|Lm]) ;
 % Evalua si dado dos pares de coordenadas, son adyacenteC, es decir, son del mismo color y son adyacentes.
 %
 
-adyacentesC(Grid,X,Y) :- esAdyacente(X,Y),mismoColor(Grid,X,Y).
+adyacentesC(Grid,X,Y,LimiteX,LimiteY) :- esAdyacente(X,Y,LimiteX,LimiteY),mismoColor(Grid,X,Y).
 
 %
-% generateAdyacentesCTransitiva(+Grid,+X,-L)
+% generateAdyacentesCTransitiva(+Grid,+X,-L,+LimiteX,+LimiteY)
 %
 % L es la lista con los adyacentesC de la celda X pasada por parametro en la grilla Grid
 %
 
-generateAdyacentesCTransitiva(Grid,X,L) :- retractall(visitado(_)), adyacentesCTransitiva(Grid,[X],L).
+generateAdyacentesCTransitiva(Grid,X,L,LimiteX,LimiteY) :- retractall(visitado(_)), adyacentesCTransitiva(Grid,[X],L,LimiteX,LimiteY).
 
 %
-% adyacentesCTransitiva(+Grid,+ListaPos,-L)
+% adyacentesCTransitiva(+Grid,+ListaPos,-L,+LimiteX,+LimiteY)
 %
 % L es la clasula transitiva de adyacentesC de las posicion pasda por parametro, acepta multiples posiciones ya que cuando
-% halla un adjacenteC sin ver intenta expandirse, llamandose recursivamente.
+% halla un adjacenteC sin ver intenta expandirse, llamandose recursivamente. Se pasa por parametro los limites de la grilla
 %
 
-adyacentesCTransitiva(Grid,[X|Xs],L) :- (   not(visitado(X)), assert(visitado(X)),findall(Y, (adyacentesC(Grid,X,Y), not(visitado(Y))),T),
-    (   (   Xs \=[] , T \= [], adyacentesCTransitiva(Grid,Xs,La), adyacentesCTransitiva(Grid,T,Ls), append(La,Ls,Lp), L = [X|Lp]);
-    (   Xs = [], T \= [], adyacentesCTransitiva(Grid,T,Ls), L = [X|Ls]); 
+adyacentesCTransitiva(Grid,[X|Xs],L,LimiteX,LimiteY) :- (   not(visitado(X)), assert(visitado(X)),findall(Y, (adyacentesC(Grid,X,Y,LimiteX,LimiteY), not(visitado(Y))),T),
+    (   (   Xs \=[] , T \= [], adyacentesCTransitiva(Grid,Xs,La,LimiteX,LimiteY), adyacentesCTransitiva(Grid,T,Ls,LimiteX,LimiteY), append(La,Ls,Lp), L = [X|Lp]);
+    (   Xs = [], T \= [], adyacentesCTransitiva(Grid,T,Ls,LimiteX,LimiteY), L = [X|Ls]); 
     (    Xs = [], T = [], L = [X] );
-    (   Xs \= [], T = [], adyacentesCTransitiva(Grid,Xs,La), L = [X|La]))); (   visitado(X), L = []).
+    (   Xs \= [], T = [], adyacentesCTransitiva(Grid,Xs,La,LimiteX,LimiteY), L = [X|La]))); (   visitado(X), L = []).
 
 %
-% esAdyacente(X,Y)
+% esAdyacente(+X,+Y,+LimiteX,+LimiteY)
 %
 % Evalua si dado dos pares de ordenados de coordenadas son adyacentes o no.
 % Retorna false, si no son adyacentes
 
-esAdyacente(X,Y) :- adyacentes(X,L), pertenece(Y,L).
+esAdyacente(X,Y,LimiteX,LimiteY) :- adyacentes(X,LimiteX,LimiteY,L), pertenece(Y,L).
 
 %
 % mismoColor (+Grid,+X,+Y)
@@ -170,9 +170,12 @@ replaceInList([_|Ms],Y,Y,E,L):- L = [E|Ms].
 flick(Grid, Origen, Color, FGrid,Capturados):-
 	getColor(Grid,Origen,C),
 	C \= Color,
-	generateAdyacentesCTransitiva(Grid,Origen,LAdyacentesC),
+    length(Grid,LimiteX),
+    Grid = [X|_],
+    length(X,LimiteY),
+	generateAdyacentesCTransitiva(Grid,Origen,LAdyacentesC,LimiteX,LimiteY),
 	flickColor(Grid,LAdyacentesC,Color,FGrid),
-    generateAdyacentesCTransitiva(FGrid,Origen,NewAdyacents),
+    generateAdyacentesCTransitiva(FGrid,Origen,NewAdyacents,LimiteX,LimiteY),
     length(NewAdyacents,Capturados).
 
                                                                                    
