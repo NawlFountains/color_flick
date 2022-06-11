@@ -37,7 +37,10 @@ class Game extends React.Component {
       grid: null,
       started: false,
       complete: false,  // true if game is complete, false otherwise
-      waiting: false
+      waiting: false,
+      depthPath: ['r','g'],
+      depthCapturados: 0,
+      depthOrigin: "[0,0]"
     };
     this.handleClick = this.handleClick.bind(this);
     this.handlePengineCreate = this.handlePengineCreate.bind(this);
@@ -60,9 +63,28 @@ class Game extends React.Component {
       return;
     }
     if (!this.state.started){
-      this.setState({origen: coords});
+      this.setState({origen: coords, depthOrigin: coords});
       alert("Celda de origen asignada");
+    } else {
+      this.setState({depthOrigin: coords});
+      alert("Se asigno celda para la estrategia");
     }
+  }
+
+  calculateDepth() {
+    var PE = document.getElementById("depthInput").valueAsNumber;
+    alert("Se ingreso con la profundidad "+PE);
+    const gridS = JSON.stringify(this.state.grid).replaceAll('"', "");
+    const queryS = "optimal_path(" + gridS + ","+this.state.depthOrigin+","+PE+", Capturados, S), S=[_|Secuencia]";
+    this.pengine.query(queryS, (success, response) => {
+      if (success) {
+        alert("Respuesta ante la consulta es "+response['Secuencia']+" y "+[response['Capturados']]);
+        this.setState({
+          depthPath: response['Secuencia'],
+          depthCapturados: response['Capturados']
+        });
+      }
+    });
   }
 
   handleClick(color) {
@@ -185,8 +207,16 @@ class Game extends React.Component {
           <div className = "depthContainer">
               <div>Introduzcir la profundiad de estrategia deseada</div>
               <div className = "depthFooter">
-                <input type="number" className="depthText"></input>
-                <button className="depthBtn">Ayuda</button>
+                <input type="number" className="depthText" id= "depthInput"></input>
+                <button className="depthBtn" onClick={() => this.calculateDepth()}>Ayuda</button>
+              </div>
+              <div className= "depthPath">
+                {this.state.depthPath.map(color =>
+                  <div
+                    className="colorCell"
+                    style={{ backgroundColor: colorToCss(color) }}
+                  />)}
+                <div className="depthCaptured">Capturados en la celda {this.state.depthOrigin} : {this.state.depthCapturados}</div>
               </div>
           </div>
         </div>

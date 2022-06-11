@@ -230,8 +230,8 @@ color(r). color(g). color(b). color(y). color(v). color(p).
 % retornando asi el mayor capturado , Cap, con su secuencia, Sec, notemos que tambien retorna el que inicio, OC.
 %
 
-path(Grid,Origen,PE,OC,NC,Cap,[OC|Sec]):- PE \= 0 , PE1 is PE - 1, flick(Grid,Origen,NC,FGrid,_),
-    optimal_path(FGrid,Origen,PE1,Cap,Sec).
+path(Grid,Origen,PE,OC,NC,Cap,[OC|Sec]):- PE \= 0 , PE1 is PE - 1, flick(Grid,Origen,NC,FGrid,_), !,
+    try_path(FGrid,Origen,PE1,Cap,Sec).
 
 path(Grid,Origen,0,OC,_,Cap,[OC|Sec]):-
     calcularCapturados(Grid,Origen,Cap),
@@ -248,6 +248,8 @@ path(Grid,Origen,0,OC,_,Cap,[OC|Sec]):-
 %
 
 
-optimal_path(Grid,Origen,PE,Capturados,Secuencia):- color(NC), getColor(Grid,Origen,OC), NC \= OC,
-    findall([C,S],(path(Grid,Origen,PE,OC,NC,C,S)),Rta), 
-    buscarMasCapturas(Rta,[0|0],[Capturados|S]), S=[Secuencia|_].
+try_path(Grid,Origen,PE,Capturados,Secuencia):- color(NC), getColor(Grid,Origen,OC), NC \= OC,
+    findall([C,S],(path(Grid,Origen,PE,OC,NC,C,S)),Rta),
+    buscarMasCapturas(Rta,[0,0],[Capturados|S]), S=[Secuencia|_].
+optimal_path(Grid,Origen,PE,Capturados,Secuencia):- findall([Capturados,Secuencia], try_path(Grid,Origen,PE,Capturados,Secuencia), R),
+    buscarMasCapturas(R,[0,0],[Capturados|S]), S=[Secuencia|_].
