@@ -100,3 +100,9 @@ body {
   font-size: 24px;
   font-family: monospace;
 }
+
+.depthContainer {
+  padding-top: 40px;
+  padding-right: 40px;
+  text-align: center;
+}

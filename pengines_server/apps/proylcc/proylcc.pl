@@ -185,4 +185,69 @@ flick(Grid, Origen, Color, FGrid,Capturados):-
 % pasadas por parametro.
 %
 
-gridComplete(Grid,Capturados) :- Grid = [X|_], length(Grid,LimiteX), length(X, LimiteY), Capturados is LimiteX * LimiteY.                                                                            
+gridComplete(Grid,Capturados) :- Grid = [X|_], length(Grid,LimiteX), length(X, LimiteY), Capturados is LimiteX * LimiteY. 
+                                                                           
+%
+% calcularCapturados(+Grid,+Origen,-Capturados)
+%
+% Dada una grilla Grid y una celda origen Origen calcula la cantidad de celdas capturadas, Capturados.
+%
+
+calcularCapturados(Grid,Origen,Capturados):-
+    length(Grid,LimiteX),
+    Grid= [X|_],
+    length(X,LimiteY),
+    generateAdyacentesCTransitiva(Grid,Origen,AdyacentesC,LimiteX,LimiteY),
+    length(AdyacentesC,Capturados).
+
+%
+% buscarMasCapturas(Xs,Ys,Zs)
+%
+% Xs lista con pares (numero,lista).
+% Ys maximo par encontrado al momento.
+% Zs par maximo de la lista.
+% 
+% Dada una lista de pares (numero,lista) retorna el par con numero mayor.
+%
+
+buscarMasCapturas([],Ys,Ys):- !.
+buscarMasCapturas([X|Xs],[MaxCap|_],Zs):-
+    X=[Y|Ys], Y > MaxCap,!, buscarMasCapturas(Xs,[Y|Ys],Zs).
+buscarMasCapturas([_|Xs],[MaxCap|MaxSec],Zs):- buscarMasCapturas(Xs,[MaxCap|MaxSec],Zs).
+
+%
+% color(X).
+%
+% X es un color que pertence a la grilla
+
+color(r). color(g). color(b). color(y). color(v). color(p).
+
+%
+% Path(+Grid,+Origen,+PE,+OC,+NC,-Cap,-Sec).
+%
+% Dado una grilla Grid, una celda Origen, un numerode movimientos PE, el color de la celda origen OC y el color
+% al que se quiere cambiar NC calcula el camino que captura mas celdas en los movimientos permitidos PE, 
+% retornando asi el mayor capturado , Cap, con su secuencia, Sec, notemos que tambien retorna el que inicio, OC.
+%
+
+path(Grid,Origen,PE,OC,NC,Cap,[OC|Sec]):- PE \= 0 , PE1 is PE - 1, flick(Grid,Origen,NC,FGrid,_),
+    optimal_path(FGrid,Origen,PE1,Cap,Sec).
+
+path(Grid,Origen,0,OC,_,Cap,[OC|Sec]):-
+    calcularCapturados(Grid,Origen,Cap),
+    Sec = [].
+
+%
+% optimal_path(+Grid,+Origen,+PE,-Capturados,-Secuencia)
+%
+% Dado una grilla Grid, una celda de origen Origen y un numero de movimiento PE calcula en esa grilla
+% cual es la secuencia ,Secuencia, que captura la mayor cantidad de celdas, Capturados.
+% Lo hace utilizando el metodo greedy solamente descartando que no se cambie al mismo color consecutivamente.
+% 
+% TOFIX: retorna el color de la celda inicial tambien
+%
+
+
+optimal_path(Grid,Origen,PE,Capturados,Secuencia):- color(NC), getColor(Grid,Origen,OC), NC \= OC,
+    findall([C,S],(path(Grid,Origen,PE,OC,NC,C,S)),Rta), 
+    buscarMasCapturas(Rta,[0|0],[Capturados|S]), S=[Secuencia|_].

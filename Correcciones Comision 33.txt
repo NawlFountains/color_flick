@@ -1,0 +1,37 @@
+Comision 33
+(+) Aspecto positivo.
+(-) Aspecto negativo.
+(*) Observacion.
+
+-----------------------------------------------------------------------------------------------------------
+Funcionalidad del proyecto:
+(+) Captura: ok
+(-) Cantidad de capturadas: en el caso inicial no se reflejan las capturadas.
+(-) Idem en el siguiente ejemplo: Podemos ver que tengo mas capturados que lo que indica el display (captura.png)
+(+) Historial: ok
+(+) Fin de juego: ok
+(-) Interfaz: 
+	-- La celda inicial no queda marcada en la pantalla, por lo que el usuario puede perder la referencia de cual es.
+	-- El bloque de texto en pantalla podria ponerse como un pop-up o aparecer despues de presionar un boton. Adicionalmente hay typos en el texto.
+-----------------------------------------------------------------------------------------------------------
+Calidad de Codigo:
+(-) getColor/3: si el parametro X es una lista de 2 elementos [F,C], no hace falta hacer los dos nth0 del comienzo ya que podes poner la siguiente cabeza de regla: getColor(Grid,[F,C],C).
+
+(-) agregarALista y CombinarCoords se pueden resumir en L = [E1,E2,E3,E4] siendo estos elementos los adyacentes que conseguiste antes.
+
+(----) Mucho uso de ";" en general, esto dificulta la lectura del codigo, especialmente en predicados importantes como adyacentesCTransitiva.
+(--) Mala separacion de casos en adyacentesCTransitiva, hay casos de mas.
+
+
+
+
+
+(*) pertenece/2 es lo mismo que member/2, predicado predefinido de prolog.
+
+(*) Si computas las capturadas al inicio y lo almacenas, podes ver que el proceso de pintar se vuelve trivial, no necesitas recorrer la matriz. De esa forma te ahorras un computo de generateAdyacentesCTransitiva.
+
+-----------------------------------------------------------------------------------------------------------
+Informe:
+(-) Problemas en la redaccion generales.
+(+) Estrategia y predicados prolog: ok.
+(+) Manual de usuario: ok.

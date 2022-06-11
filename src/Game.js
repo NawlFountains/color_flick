@@ -182,6 +182,13 @@ class Game extends React.Component {
               <p>El juego consta de ir seleccionado colores, estos colores cambian las celdas que son adjacentes y del mismo color a la celda origen, el juego se acaba
               cuando el jugador logra hacer que toda la grilla tenga el mismo color. A jugar.</p>
               </div>
+          <div className = "depthContainer">
+              <div>Introduzcir la profundiad de estrategia deseada</div>
+              <div className = "depthFooter">
+                <input type="number" className="depthText"></input>
+                <button className="depthBtn">Ayuda</button>
+              </div>
+          </div>
         </div>
       </div>
     );
