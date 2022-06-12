@@ -38,7 +38,7 @@ class Game extends React.Component {
       started: false,
       complete: false,  // true if game is complete, false otherwise
       waiting: false,
-      depthPath: ['r','g'],
+      depthPath: [],
       depthCapturados: 0,
       depthOrigin: "[0,0]"
     };
@@ -199,24 +199,30 @@ class Game extends React.Component {
         <div className="rightPanel">
           <h1>Color flick</h1>
           <div className="instructionsText">
-              <p>Para jugar primero debe seleccionar la celda donde desea originar, una vez seleccione una celda esta no puede ser cambiada, de seleccionar una
-              el juego le asigna la celda en la parte super izquierda de la grilla.</p>
-              <p>El juego consta de ir seleccionado colores, estos colores cambian las celdas que son adjacentes y del mismo color a la celda origen, el juego se acaba
-              cuando el jugador logra hacer que toda la grilla tenga el mismo color. A jugar.</p>
+              <p>Para jugar primero debe seleccionar la celda donde desea originar, una vez seleccione una celda esta y haga algun movimiento no podra ser cambiada, si no 
+                de selecciona una celda el juego le asigna aquella en la parte super izquierda de la grilla.</p>
+              <p>El juego consta de ir seleccionado colores, estos colores cambian las celdas que son adyacentes y del mismo color a la celda origen, el juego se acaba
+              cuando el jugador logra hacer que toda la grilla tenga el mismo color.</p>
+              <p>Ademas se provee un calculador de secuencias optimas segun una profundidad, es decir, con la cantidad de movimientos ingresada calcula la secuencia de colores
+                 que captura la mayor cantidad de celdas, asume la celda seleccionada pero puede seleccionarse otra celda si lo desea.</p>
+              <p>La secuencia se lee de izquierda a derecha desde arriba hacia abajo, es decir, arriba a la izquierda esta el primer color de la secuencia</p>
               </div>
           <div className = "depthContainer">
-              <div>Introduzcir la profundiad de estrategia deseada</div>
+              <div>Introduzcir la profundidad de estrategia deseada</div>
               <div className = "depthFooter">
                 <input type="number" className="depthText" id= "depthInput"></input>
                 <button className="depthBtn" onClick={() => this.calculateDepth()}>Ayuda</button>
               </div>
-              <div className= "depthPath">
-                {this.state.depthPath.map(color =>
-                  <div
+              <div className="depthCaptured">Capturados en la celda {this.state.depthOrigin} : {this.state.depthCapturados}</div>
+              <div className="depthPathPanel">
+                    Secuencia
+                <div className= "depthPath">
+                  {this.state.depthPath.map(color =>
+                    <div
                     className="colorCell"
                     style={{ backgroundColor: colorToCss(color) }}
-                  />)}
-                <div className="depthCaptured">Capturados en la celda {this.state.depthOrigin} : {this.state.depthCapturados}</div>
+                    />)}
+                </div>
               </div>
           </div>
         </div>

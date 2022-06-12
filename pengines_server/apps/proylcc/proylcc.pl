@@ -176,7 +176,7 @@ flick(Grid, Origen, Color, FGrid,Capturados):-
 	generateAdyacentesCTransitiva(Grid,Origen,LAdyacentesC,LimiteX,LimiteY),
 	flickColor(Grid,LAdyacentesC,Color,FGrid),
     generateAdyacentesCTransitiva(FGrid,Origen,NewAdyacents,LimiteX,LimiteY),
-    length(NewAdyacents,Capturados).
+    length(NewAdyacents,Capturados), !.
 
 %
 % gridComplete(+Grid,+Capturados)
@@ -198,7 +198,7 @@ calcularCapturados(Grid,Origen,Capturados):-
     Grid= [X|_],
     length(X,LimiteY),
     generateAdyacentesCTransitiva(Grid,Origen,AdyacentesC,LimiteX,LimiteY),
-    length(AdyacentesC,Capturados).
+    length(AdyacentesC,Capturados),!.
 
 %
 % buscarMasCapturas(Xs,Ys,Zs)
@@ -233,10 +233,6 @@ color(r). color(g). color(b). color(y). color(v). color(p).
 path(Grid,Origen,PE,OC,NC,Cap,[OC|Sec]):- PE \= 0 , PE1 is PE - 1, flick(Grid,Origen,NC,FGrid,_), !,
     try_path(FGrid,Origen,PE1,Cap,Sec).
 
-path(Grid,Origen,0,OC,_,Cap,[OC|Sec]):-
-    calcularCapturados(Grid,Origen,Cap),
-    Sec = [].
-
 %
 % optimal_path(+Grid,+Origen,+PE,-Capturados,-Secuencia)
 %
@@ -248,8 +244,17 @@ path(Grid,Origen,0,OC,_,Cap,[OC|Sec]):-
 %
 
 
-try_path(Grid,Origen,PE,Capturados,Secuencia):- color(NC), getColor(Grid,Origen,OC), NC \= OC,
-    findall([C,S],(path(Grid,Origen,PE,OC,NC,C,S)),Rta),
-    buscarMasCapturas(Rta,[0,0],[Capturados|S]), S=[Secuencia|_].
+try_path(Grid,Origen,PE,Capturados,Secuencia):-
+    PE \=0,!, color(NC), 
+    getColor(Grid,Origen,OC), 
+    NC \= OC,
+    findall([C,S],(path(Grid,Origen,PE,OC,NC,C,S)),R),
+    buscarMasCapturas(R,[0,0],[Capturados|S]), S=[Secuencia|_].
+
+try_path(Grid,Origen,0,Capturados,Secuencia):-
+    calcularCapturados(Grid,Origen,Capturados), !,
+    getColor(Grid,Origen,C),
+    Secuencia=[C].
+
 optimal_path(Grid,Origen,PE,Capturados,Secuencia):- findall([Capturados,Secuencia], try_path(Grid,Origen,PE,Capturados,Secuencia), R),
     buscarMasCapturas(R,[0,0],[Capturados|S]), S=[Secuencia|_].

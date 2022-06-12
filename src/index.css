@@ -22,7 +22,7 @@ body {
   justify-content: center;
 }
 
-.historyScroll {
+.historyScroll, .depthPath {
   display: grid;
   grid-template-columns: auto auto auto;
   grid-template-rows: auto auto;
@@ -102,7 +102,22 @@ body {
 }
 
 .depthContainer {
-  padding-top: 40px;
-  padding-right: 40px;
+  padding : 40px;
   text-align: center;
+  overflow:hidden;
+}
+
+.depthCaptured {
+  padding-top: 40px;
+  float: left;
+  width:500px;
+}
+
+.depthPathPanel{
+  padding-top:30px;
+}
+
+.depthPath {
+  padding-top: 40px;
+  overflow:hidden;
 }
