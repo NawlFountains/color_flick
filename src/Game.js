@@ -80,7 +80,6 @@ class Game extends React.Component {
 
   calculateDepth() {
     var PE = document.getElementById("depthInput").valueAsNumber;
-    alert("Se ingreso con la profundidad "+PE);
     const gridS = JSON.stringify(this.state.grid).replaceAll('"', "");
     const queryS = "optimal_path(" + gridS + ","+this.state.depthOrigen+","+PE+", Capturados, S), S=[_|Secuencia]";
     this.pengine.query(queryS, (success, response) => {

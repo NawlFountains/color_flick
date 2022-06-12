@@ -4,28 +4,14 @@
 	]).
 
 :- dynamic visitado/1.
-
-%
-% adyCStar(Origin, +Grid, -Res)
-% Calcula el conjunto de celdas adyacentesC* de la celda Origin en la grilla Grid
-% siguiendo una estrategia de propagación o expansión.
-%
+/*
+ * adyCStar(Origin, +Grid, -Res)
+ * Calcula el conjunto de celdas adyacentesC* de la celda Origin en la grilla Grid
+ * siguiendo una estrategia de propagación o expansión.
+ */
 
 adyCStar(Origin, Grid, Res) :-
     adyCStarSpread([Origin], [], Grid, Res).
-
-%
-% adyCStarSpread(+Pend, +Vis, +Grid, -Res)
-% Pend: por "pendientes", inicialmente es la lista [Origin], y en general es 
-% el conjunto de celdas adyacentesC* a Origin que aún no fueron consideradas.
-% Vis: por "visitados", inicialmente [], son las celdas adyacentesC* a la Origen 
-% que ya fueron consideradas.
-% Grid: idem adyCStar
-% Res: idem adyCStar
-% En cada paso se selecciona una celda de las pendientes, se pasa a visitados, y
-% se agregan a pendientes todas aquellas adyacentes a la celda, del mismo color, que no estén
-% ya ni en pendientes ni visitados.
-%
 
 adyCStarSpread([], Vis, _Grid, Vis).
 
@@ -41,26 +27,19 @@ adyCStarSpread(Pend, Vis, Grid, Res):-
     append(AdyCP, Ps, NPend),
     adyCStarSpread(NPend, [P|Vis], Grid, Res).
 
-%
-% getColor(+Grid,+[X,Y],-C)
-%
-% C es el color que se encuentra en la grilla en la posicion [X,Y] pasada por parametro
-%
-
-getColor(Grid,[X,Y],C) :-nth0(X, Grid, F),
-    nth0(Y, F, C).
-% 
-% adyC(+P, +Grid, -A)
-%
+getColor(Grid,X,C) :- nth0(0,X,X1), nth0(1,X,Y1), nth0(X1,Grid,Fila), nth0(Y1,Fila,C).
+/* 
+ * adyC(+P, +Grid, -A)
+ */
 
 adyC(P, Grid, A):-
     ady(P, Grid, A),
-    getColor(Grid,P, C),
-    getColor(Grid,A, C).
+    color(P, Grid, C),
+    color(A, Grid, C).
 
-% 
-% ady(+P, +Grid, -A)
-%
+/* 
+ * ady(+P, +Grid, -A)
+ */
 
 ady([X, Y], Grid, [X1, Y]):-
     length(Grid, L),
@@ -81,11 +60,14 @@ ady([X, Y], _Grid, [X, Y1]):-
     Y > 0,
     Y1 is Y - 1.
 
-%
-% flickColor(+Grid, +ListaPos, +C, -GridNew)
-%
-% GridNew es la nueva grilla resultante de recorrer la lista de posiciones, ListaPos, en Grid, y cambiandoles el color a C.
-%
+
+/* 
+ * color(P, Grid, C)
+ */
+
+color([X,Y], Grid, C):-
+    nth0(X, Grid, F),
+    nth0(Y, F, C).  
 
 flickColor(Grid, [] , _, Grid).
 flickColor(Grid, ListaPos , C, GridNew) :- ListaPos = [Coord| L1], setColor(Grid, Coord, C, GridAux),
@@ -124,14 +106,17 @@ replaceInList([_|Ms],Y,Y,E,L):- L = [E|Ms].
 %
 % FGrid es el resultado de hacer 'flick' de la grilla Grid con el color Color.
 % Retorna false si Color coincide con el color de la celda Origen de la grilla. 
-% 
+% TODO : se guardan los assert por eso hay retract, deberia haber un predicado que
+% aisle eso y ademas el convertir en una lista a origen, [Origen].
+% TODO: remplazar el calculo de captura, ahora hay un predicado para eso
 
 flick(Grid, Origen, Color, FGrid,Capturados):-
 	getColor(Grid,Origen,C),
 	C \= Color,
 	adyCStar(Origen,Grid,LAdyacentesC),
 	flickColor(Grid,LAdyacentesC,Color,FGrid),
-    calcularCapturados(FGrid,Origen,Capturados), !.
+    adyCStar(Origen,FGrid,NewAdyacents),
+    length(NewAdyacents,Capturados), !.
 
 %
 % gridComplete(+Grid,+Capturados)
@@ -163,16 +148,21 @@ calcularCapturados(Grid,Origen,Capturados):-
 %
 
 buscarMasCapturas([],Ys,Ys):- !.
-buscarMasCapturas([X|Xs],[MaxCap|_],Zs):-
-    X=[Y|Ys], Y > MaxCap,!, buscarMasCapturas(Xs,[Y|Ys],Zs).
+buscarMasCapturas([X|Xs],[MaxCap|MaxSec],Zs):-
+    X=[Y|Ys], Y >= MaxCap, Ys=[NewSec|_], MaxSec =[Aux |_], 
+    length(NewSec,LY), length(Aux,LS), LY =< LS,
+    !, 
+    buscarMasCapturas(Xs,[Y|Ys],Zs).
 buscarMasCapturas([_|Xs],[MaxCap|MaxSec],Zs):- buscarMasCapturas(Xs,[MaxCap|MaxSec],Zs).
 
+
+iniciarBuscarMasCapturas([X|Xs],Zs) :- buscarMasCapturas(Xs,X,Zs).
 %
 % color(X).
 %
 % X es un color que pertence a la grilla
 
-color(r). color(g). color(b). color(y). color(v). color(p).
+colors(r). colors(g). colors(b). colors(y). colors(v). colors(p).
 
 %
 % Path(+Grid,+Origen,+PE,+OC,+NC,-Cap,-Sec).
@@ -182,29 +172,18 @@ color(r). color(g). color(b). color(y). color(v). color(p).
 % retornando asi el mayor capturado , Cap, con su secuencia, Sec, notemos que tambien retorna el que inicio, OC.
 %
 
-path(Grid,Origen,PE,OC,NC,Cap,[OC|Sec]):- PE \= 0 , PE1 is PE - 1, flick(Grid,Origen,NC,FGrid,_), !,
+path(Grid,Origen,PE,OC,NC,Cap,[OC|Sec]):-
+    PE \= 0 , 
+    PE1 is PE - 1,
+    flick(Grid,Origen,NC,FGrid,C),
+    not(gridComplete(FGrid,C)), !,
     try_path(FGrid,Origen,PE1,Cap,Sec).
 
-
-%
-% try_path(+Grid,+Origen,+PE,-Capturados,-Secuencia)
-%
-% Dada una Grilla ,Grid, una celda de origen, Origen, y una cantidad de movimientos PE , prueba las combinaciones
-% posibles de caminos desde esa celda y expande dependiendo de la cantidad de PE, retorna la secuencia que se uso
-% que logro capturar mas celdas
-%
-
-try_path(Grid,Origen,PE,Capturados,Secuencia):-
-    PE \=0,!, color(NC),
-    getColor(Grid,Origen,OC), 
-    NC \= OC,
-    findall([C,S],(path(Grid,Origen,PE,OC,NC,C,S)),R),
-    buscarMasCapturas(R,[0,0],[Capturados|S]), S=[Secuencia|_].
-
-try_path(Grid,Origen,0,Capturados,Secuencia):-
-    calcularCapturados(Grid,Origen,Capturados), !,
-    getColor(Grid,Origen,C),
-    Secuencia=[C].
+path(Grid,Origen,PE,OC,NC,Cap,[OC|Sec]):- 
+    PE \= 0,
+    flick(Grid,Origen,NC,FGrid,Cap), 
+    gridComplete(FGrid,Cap), !, 
+    Sec = [NC].
 
 %
 % optimal_path(+Grid,+Origen,+PE,-Capturados,-Secuencia)
@@ -216,5 +195,19 @@ try_path(Grid,Origen,0,Capturados,Secuencia):-
 % TOFIX: retorna el color de la celda inicial tambien
 %
 
-optimal_path(Grid,Origen,PE,Capturados,Secuencia):- PE > 0, findall([Capturados,Secuencia], try_path(Grid,Origen,PE,Capturados,Secuencia), R),
-    buscarMasCapturas(R,[0,0],[Capturados|S]), S=[Secuencia|_].
+
+try_path(Grid,Origen,PE,Capturados,Secuencia):-
+    PE \=0,!, colors(NC),
+    getColor(Grid,Origen,OC), 
+    NC \= OC,
+    findall([C,S],(path(Grid,Origen,PE,OC,NC,C,S)),R),
+    iniciarBuscarMasCapturas(R,[Capturados|S]), S=[Secuencia|_].
+
+try_path(Grid,Origen,0,Capturados,Secuencia):-
+    calcularCapturados(Grid,Origen,Capturados), !,
+    getColor(Grid,Origen,C),
+    Secuencia=[C].
+
+optimal_path(Grid,Origen,PE,Capturados,Secuencia):- PE > 0 ,findall([Capturados,Secuencia], try_path(Grid,Origen,PE,Capturados,Secuencia), R),
+    iniciarBuscarMasCapturas(R,[Capturados|S]), S=[Secuencia|_].
+
