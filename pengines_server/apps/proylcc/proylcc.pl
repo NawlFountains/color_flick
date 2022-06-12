@@ -6,120 +6,80 @@
 :- dynamic visitado/1.
 
 %
-% adyacentes([+X,+Y],+LimiteX,+LimiteY -L)
-%
-% L es un la lista con las posiciones adyacentes a la posicion pasada dentro de los limites de la grilla
-% que en nuestro caso es de LmiteX x LimiteY.
-
-adyacentes([X,Y],LimiteX,LimiteY,L):- X >= 0 , X < LimiteX , Y >= 0 , Y < LimiteY ,
-    X1 is X-1,getCoord(X1,Y,LimiteX,LimiteY,E1),
-    X2 is X+1, getCoord(X2,Y,LimiteX,LimiteY,E2),
-    Y1 is Y-1 ,getCoord(X,Y1,LimiteX,LimiteY,E3),
-    Y2 is Y+1 ,getCoord(X,Y2,LimiteX,LimiteY,E4),
-    combineCoords(E1,E2,E3,E4,Lm),
-    clear_outs(Lm,L).
-
-
-%
-% getCoords(+X,+Y,+LimiteX,+LimiteY-E)
-%
-% E es un par ordenado de coordenadas que evalua si la coordenada pasada por parametro pertenece o no a la grilla y retornar
-% el par correspondiente, si esta dentro retorna el mismo valor ingresado pero en un par, si alguna componente
-% escapa de lo LimiteX o LimiteY, se le asigna "out".
-
-getCoord(X,Y,LimiteX,LimiteY,E) :- ( Em = [out] , agregarALista(out,Em,E), ((X < 0) ; (X > LimiteX)), ((Y <0);(Y >= LimiteY)));
-                    (Em = [out], agregarALista(Y,Em,E), (((X < 0) ; (X >= LimiteX)), ((Y >= 0),(Y < LimiteY))));
-                    ( Em = [X] , agregarALista(out,Em,E) ,(((X >= 0) , (X < LimiteX)), ((Y < 0);(Y >= LimiteY))));
-                    (  Em = [X] , agregarALista(Y,Em,E), (((X >= 0) , (X < LimiteX)), ((Y >= 0),(Y < LimiteY)))).
-
-%
-% clear_outs(+X,-L)
-%
-% L es la lista pasada como parametro con pares ordenadas y borra los pares que contengan "out".
-%
-clear_outs([],[]).
-clear_outs([X|Xs],L) :- (not(pertenece(out,X)),clear_outs(Xs,Lm), L= [X|Lm]) ;
-                        (pertenece(out,X),clear_outs(Xs,L)).
-
-%
-% adyacentesC(+Grid,+X,+Y)
-%
-% Evalua si dado dos pares de coordenadas, son adyacenteC, es decir, son del mismo color y son adyacentes.
+% adyCStar(Origin, +Grid, -Res)
+% Calcula el conjunto de celdas adyacentesC* de la celda Origin en la grilla Grid
+% siguiendo una estrategia de propagación o expansión.
 %
 
-adyacentesC(Grid,X,Y,LimiteX,LimiteY) :- esAdyacente(X,Y,LimiteX,LimiteY),mismoColor(Grid,X,Y).
+adyCStar(Origin, Grid, Res) :-
+    adyCStarSpread([Origin], [], Grid, Res).
 
 %
-% generateAdyacentesCTransitiva(+Grid,+X,-L,+LimiteX,+LimiteY)
-%
-% L es la lista con los adyacentesC de la celda X pasada por parametro en la grilla Grid
-%
-
-generateAdyacentesCTransitiva(Grid,X,L,LimiteX,LimiteY) :- retractall(visitado(_)), adyacentesCTransitiva(Grid,[X],L,LimiteX,LimiteY).
-
-%
-% adyacentesCTransitiva(+Grid,+ListaPos,-L,+LimiteX,+LimiteY)
-%
-% L es la clasula transitiva de adyacentesC de las posicion pasda por parametro, acepta multiples posiciones ya que cuando
-% halla un adjacenteC sin ver intenta expandirse, llamandose recursivamente. Se pasa por parametro los limites de la grilla
+% adyCStarSpread(+Pend, +Vis, +Grid, -Res)
+% Pend: por "pendientes", inicialmente es la lista [Origin], y en general es 
+% el conjunto de celdas adyacentesC* a Origin que aún no fueron consideradas.
+% Vis: por "visitados", inicialmente [], son las celdas adyacentesC* a la Origen 
+% que ya fueron consideradas.
+% Grid: idem adyCStar
+% Res: idem adyCStar
+% En cada paso se selecciona una celda de las pendientes, se pasa a visitados, y
+% se agregan a pendientes todas aquellas adyacentes a la celda, del mismo color, que no estén
+% ya ni en pendientes ni visitados.
 %
 
-adyacentesCTransitiva(Grid,[X|Xs],L,LimiteX,LimiteY) :- (   not(visitado(X)), assert(visitado(X)),findall(Y, (adyacentesC(Grid,X,Y,LimiteX,LimiteY), not(visitado(Y))),T),
-    (   (   Xs \=[] , T \= [], adyacentesCTransitiva(Grid,Xs,La,LimiteX,LimiteY), adyacentesCTransitiva(Grid,T,Ls,LimiteX,LimiteY), append(La,Ls,Lp), L = [X|Lp]);
-    (   Xs = [], T \= [], adyacentesCTransitiva(Grid,T,Ls,LimiteX,LimiteY), L = [X|Ls]); 
-    (    Xs = [], T = [], L = [X] );
-    (   Xs \= [], T = [], adyacentesCTransitiva(Grid,Xs,La,LimiteX,LimiteY), L = [X|La]))); (   visitado(X), L = []).
+adyCStarSpread([], Vis, _Grid, Vis).
+
+adyCStarSpread(Pend, Vis, Grid, Res):-
+    Pend = [P|Ps],
+    findall(A, 
+	        (
+    	        adyC(P, Grid, A),
+        	    not(member(A, Pend)),
+            	not(member(A, Vis))
+	        ), 
+            AdyCP),
+    append(AdyCP, Ps, NPend),
+    adyCStarSpread(NPend, [P|Vis], Grid, Res).
 
 %
-% esAdyacente(+X,+Y,+LimiteX,+LimiteY)
+% getColor(+Grid,+[X,Y],-C)
 %
-% Evalua si dado dos pares de ordenados de coordenadas son adyacentes o no.
-% Retorna false, si no son adyacentes
-
-esAdyacente(X,Y,LimiteX,LimiteY) :- adyacentes(X,LimiteX,LimiteY,L), pertenece(Y,L).
-
-%
-% mismoColor (+Grid,+X,+Y)
-%
-% Evalua si dada una Grilla y dos posiciones, en esas posiciones se encuentran elementos que hacen referencia al mismo color, 
-% el caso de este proyecto, que el caracter que representa al color sea el mismo.
-% Retorna False si no son del mismo color.
-
-mismoColor(Grid,X,Y) :-	getColor(Grid,X,C), getColor(Grid,Y,C).
-
-%
-% getColor(+Grid,+X,-C)
-%
-% C es el color que se encuentra en la grilla en la posicion X pasada por parametro
+% C es el color que se encuentra en la grilla en la posicion [X,Y] pasada por parametro
 %
 
-getColor(Grid,X,C) :- nth0(0,X,X1), nth0(1,X,Y1), nth0(X1,Grid,Fila), nth0(Y1,Fila,C).
-
-%
-% combineCoords(+X,+Y,+Z,+W,-L)
-%
-% L es el resultado de combinar en una lista los pares ordenados que representan coordenadas , X , Y, Z y W.
+getColor(Grid,[X,Y],C) :-nth0(X, Grid, F),
+    nth0(Y, F, C).
+% 
+% adyC(+P, +Grid, -A)
 %
 
-combineCoords(X,Y,Z,W,L) :- agregarALista(X,[],L1), agregarALista(Y,L1,L2), agregarALista(Z,L2,L3), agregarALista(W,L3,L).
+adyC(P, Grid, A):-
+    ady(P, Grid, A),
+    getColor(Grid,P, C),
+    getColor(Grid,A, C).
 
-%
-% pertenece(+X,+L)
-%
-% Dado una lista L y una elemento X, verifica si X pertenece a la lista L.
-% Retorna false si no pertenece.
-
-pertenece(X,[X|_Ys]).
-pertenece(X,[_Y|Ys]) :- pertenece(X,Ys).
-
-%
-% agregarALista(+X,+L,-Lout)
-%
-% Lout es el resultado de agregar a la lista L el elemento X.
+% 
+% ady(+P, +Grid, -A)
 %
 
-agregarALista(X,[],[X]).
-agregarALista(X,[Y|Ys],[Y|L]) :- agregarALista(X,Ys,L).
+ady([X, Y], Grid, [X1, Y]):-
+    length(Grid, L),
+    X < L - 1,
+    X1 is X + 1.
+
+ady([X, Y], _Grid, [X1, Y]):-
+    X > 0,
+    X1 is X - 1.
+
+ady([X, Y], Grid, [X, Y1]):-
+    Grid = [F|_],
+    length(F, L),
+    Y < L - 1,
+    Y1 is Y + 1.
+
+ady([X, Y], _Grid, [X, Y1]):-
+    Y > 0,
+    Y1 is Y - 1.
 
 %
 % flickColor(+Grid, +ListaPos, +C, -GridNew)
@@ -164,19 +124,14 @@ replaceInList([_|Ms],Y,Y,E,L):- L = [E|Ms].
 %
 % FGrid es el resultado de hacer 'flick' de la grilla Grid con el color Color.
 % Retorna false si Color coincide con el color de la celda Origen de la grilla. 
-% TODO : se guardan los assert por eso hay retract, deberia haber un predicado que
-% aisle eso y ademas el convertir en una lista a origen, [Origen].
+% 
 
 flick(Grid, Origen, Color, FGrid,Capturados):-
 	getColor(Grid,Origen,C),
 	C \= Color,
-    length(Grid,LimiteX),
-    Grid = [X|_],
-    length(X,LimiteY),
-	generateAdyacentesCTransitiva(Grid,Origen,LAdyacentesC,LimiteX,LimiteY),
+	adyCStar(Origen,Grid,LAdyacentesC),
 	flickColor(Grid,LAdyacentesC,Color,FGrid),
-    generateAdyacentesCTransitiva(FGrid,Origen,NewAdyacents,LimiteX,LimiteY),
-    length(NewAdyacents,Capturados), !.
+    calcularCapturados(FGrid,Origen,Capturados), !.
 
 %
 % gridComplete(+Grid,+Capturados)
@@ -185,8 +140,8 @@ flick(Grid, Origen, Color, FGrid,Capturados):-
 % pasadas por parametro.
 %
 
-gridComplete(Grid,Capturados) :- Grid = [X|_], length(Grid,LimiteX), length(X, LimiteY), Capturados is LimiteX * LimiteY. 
-                                                                           
+gridComplete(Grid,Capturados) :- Grid = [X|_], length(Grid,LimiteX), length(X, LimiteY), Capturados is LimiteX * LimiteY.                                                                            
+
 %
 % calcularCapturados(+Grid,+Origen,-Capturados)
 %
@@ -194,10 +149,7 @@ gridComplete(Grid,Capturados) :- Grid = [X|_], length(Grid,LimiteX), length(X, L
 %
 
 calcularCapturados(Grid,Origen,Capturados):-
-    length(Grid,LimiteX),
-    Grid= [X|_],
-    length(X,LimiteY),
-    generateAdyacentesCTransitiva(Grid,Origen,AdyacentesC,LimiteX,LimiteY),
+    adyCStar(Origen,Grid,AdyacentesC),
     length(AdyacentesC,Capturados),!.
 
 %
@@ -233,19 +185,17 @@ color(r). color(g). color(b). color(y). color(v). color(p).
 path(Grid,Origen,PE,OC,NC,Cap,[OC|Sec]):- PE \= 0 , PE1 is PE - 1, flick(Grid,Origen,NC,FGrid,_), !,
     try_path(FGrid,Origen,PE1,Cap,Sec).
 
-%
-% optimal_path(+Grid,+Origen,+PE,-Capturados,-Secuencia)
-%
-% Dado una grilla Grid, una celda de origen Origen y un numero de movimiento PE calcula en esa grilla
-% cual es la secuencia ,Secuencia, que captura la mayor cantidad de celdas, Capturados.
-% Lo hace utilizando el metodo greedy solamente descartando que no se cambie al mismo color consecutivamente.
-% 
-% TOFIX: retorna el color de la celda inicial tambien
-%
 
+%
+% try_path(+Grid,+Origen,+PE,-Capturados,-Secuencia)
+%
+% Dada una Grilla ,Grid, una celda de origen, Origen, y una cantidad de movimientos PE , prueba las combinaciones
+% posibles de caminos desde esa celda y expande dependiendo de la cantidad de PE, retorna la secuencia que se uso
+% que logro capturar mas celdas
+%
 
 try_path(Grid,Origen,PE,Capturados,Secuencia):-
-    PE \=0,!, color(NC), 
+    PE \=0,!, color(NC),
     getColor(Grid,Origen,OC), 
     NC \= OC,
     findall([C,S],(path(Grid,Origen,PE,OC,NC,C,S)),R),
@@ -256,5 +206,15 @@ try_path(Grid,Origen,0,Capturados,Secuencia):-
     getColor(Grid,Origen,C),
     Secuencia=[C].
 
-optimal_path(Grid,Origen,PE,Capturados,Secuencia):- findall([Capturados,Secuencia], try_path(Grid,Origen,PE,Capturados,Secuencia), R),
+%
+% optimal_path(+Grid,+Origen,+PE,-Capturados,-Secuencia)
+%
+% Dado una grilla Grid, una celda de origen Origen y un numero de movimiento PE calcula en esa grilla
+% cual es la secuencia ,Secuencia, que captura la mayor cantidad de celdas, Capturados.
+% Lo hace utilizando el metodo greedy solamente descartando que no se cambie al mismo color consecutivamente.
+% 
+% TOFIX: retorna el color de la celda inicial tambien
+%
+
+optimal_path(Grid,Origen,PE,Capturados,Secuencia):- PE > 0, findall([Capturados,Secuencia], try_path(Grid,Origen,PE,Capturados,Secuencia), R),
     buscarMasCapturas(R,[0,0],[Capturados|S]), S=[Secuencia|_].

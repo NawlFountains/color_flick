@@ -38,9 +38,9 @@ class Game extends React.Component {
       started: false,
       complete: false,  // true if game is complete, false otherwise
       waiting: false,
-      depthPath: [],
+      depthCamino: [],
       depthCapturados: 0,
-      depthOrigin: "[0,0]"
+      depthOrigen: "[0,0]"
     };
     this.handleClick = this.handleClick.bind(this);
     this.handlePengineCreate = this.handlePengineCreate.bind(this);
@@ -63,10 +63,17 @@ class Game extends React.Component {
       return;
     }
     if (!this.state.started){
-      this.setState({origen: coords, depthOrigin: coords});
+      this.setState({origen: coords, depthOrigen: coords});
+      const gridS = JSON.stringify(this.state.grid).replaceAll('"', "");
+      const queryS = "calcularCapturados(" + gridS + ","+coords+", Capturados)";
+      this.pengine.query(queryS, (success, response) => {
+        if (success) {
+          this.setState({capturados: response['Capturados']});
+        }
+      });
       alert("Celda de origen asignada");
     } else {
-      this.setState({depthOrigin: coords});
+      this.setState({depthOrigen: coords});
       alert("Se asigno celda para la estrategia");
     }
   }
@@ -75,14 +82,16 @@ class Game extends React.Component {
     var PE = document.getElementById("depthInput").valueAsNumber;
     alert("Se ingreso con la profundidad "+PE);
     const gridS = JSON.stringify(this.state.grid).replaceAll('"', "");
-    const queryS = "optimal_path(" + gridS + ","+this.state.depthOrigin+","+PE+", Capturados, S), S=[_|Secuencia]";
+    const queryS = "optimal_path(" + gridS + ","+this.state.depthOrigen+","+PE+", Capturados, S), S=[_|Secuencia]";
     this.pengine.query(queryS, (success, response) => {
       if (success) {
-        alert("Respuesta ante la consulta es "+response['Secuencia']+" y "+[response['Capturados']]);
+        alert("Estrategia calculada con exito");
         this.setState({
-          depthPath: response['Secuencia'],
+          depthCamino: response['Secuencia'],
           depthCapturados: response['Capturados']
         });
+      } else{
+        alert("ERROR: no se ingreso un numero natural como profundidad")
       }
     });
   }
@@ -205,7 +214,7 @@ class Game extends React.Component {
               cuando el jugador logra hacer que toda la grilla tenga el mismo color.</p>
               <p>Ademas se provee un calculador de secuencias optimas segun una profundidad, es decir, con la cantidad de movimientos ingresada calcula la secuencia de colores
                  que captura la mayor cantidad de celdas, asume la celda seleccionada pero puede seleccionarse otra celda si lo desea.</p>
-              <p>La secuencia se lee de izquierda a derecha desde arriba hacia abajo, es decir, arriba a la izquierda esta el primer color de la secuencia</p>
+              <p>El primer color de la secuencia es el que esta arriba del todo.</p>
               </div>
           <div className = "depthContainer">
               <div>Introduzcir la profundidad de estrategia deseada</div>
@@ -213,11 +222,11 @@ class Game extends React.Component {
                 <input type="number" className="depthText" id= "depthInput"></input>
                 <button className="depthBtn" onClick={() => this.calculateDepth()}>Ayuda</button>
               </div>
-              <div className="depthCaptured">Capturados en la celda {this.state.depthOrigin} : {this.state.depthCapturados}</div>
+              <div className="depthCaptured">Capturados en la celda {this.state.depthOrigen} : {this.state.depthCapturados}</div>
               <div className="depthPathPanel">
                     Secuencia
                 <div className= "depthPath">
-                  {this.state.depthPath.map(color =>
+                  {this.state.depthCamino.map(color =>
                     <div
                     className="colorCell"
                     style={{ backgroundColor: colorToCss(color) }}
